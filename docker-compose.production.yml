@@ -1,0 +1,46 @@
+version: '3'
+
+volumes:
+  postgres_db:
+  static:
+
+
+services:
+  db:
+    container_name: db
+    # Из какого образа запустить контейнер:
+    image: postgres:13.10
+    # Файл (или список файлов) с переменными окружения
+    env_file: .env
+    # Какой volume подключить для этого контейнера
+    volumes:
+      - postgres_db:/var/lib/postgresql/data
+  # Имя и описание контейнера с бэкендом
+  backend:
+    # Из какого Dockerfile собирать образ для этого контейнера:
+    container_name: backend
+    image: kadissa/taski_backend
+    env_file: .env
+    volumes:
+      - static:/backend_static
+    # Какие контейнеры нужно запустить до старта этого контейнера:
+    depends_on:
+      - db
+  # Имя третьего контейнера. Это контейнер с фронтендом
+  frontend:
+    container_name: frontend
+    env_file: .env
+    image: kadissa/taski_fronend
+    command: cp -r /app/build/. /frontend_static/
+    volumes:
+      - static:/frontend_static
+
+
+  gateway:
+    container_name: gateway
+    env_file: .env
+    image: kadissa/taski_gateway
+    volumes:
+      - static:/staticfiles
+    ports:
+      - 8000:80
